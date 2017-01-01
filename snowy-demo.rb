@@ -10,7 +10,13 @@ end
 
 require "webrick"
 require_relative "lib/snowy"
-require_relative "lib/snowy/cairo"
+begin
+  require "cairo"
+  require_relative "lib/snowy/cairo"
+  NOCAIRO = false
+rescue LoadError
+  NOCAIRO = true
+end
 
 RANDMAX = 1 << 32
 
@@ -57,9 +63,9 @@ s.mount_proc("/snowy/") do |req, res|
   end
   case params["driver"]
   when "cairo"
-    driver = Snowy::CairoDriver
+    driver = NOCAIRO ? :ruby : :cairo
   else
-    driver = Snowy::DefaultDriver
+    driver = :ruby
   end
   extendcap = (params["extendcap"] || "false") == "false" ? false : true
   bin = Snowy.generate_to_png(id, size: size, cap: cap, extendcap: extendcap,
