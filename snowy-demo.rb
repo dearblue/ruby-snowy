@@ -10,6 +10,7 @@ end
 
 require "webrick"
 require_relative "lib/snowy"
+require_relative "lib/snowy/cairo"
 
 RANDMAX = 1 << 32
 
@@ -54,8 +55,16 @@ s.mount_proc("/snowy/") do |req, res|
   if params["monotone"]
     id = (id & 0x000fffff) | 0x9cf00000
   end
+  case params["driver"]
+  when "cairo"
+    driver = Snowy::CairoDriver
+  else
+    driver = Snowy::DefaultDriver
+  end
   extendcap = (params["extendcap"] || "false") == "false" ? false : true
-  bin = Snowy.generate_to_png(id, size: size, cap: cap, extendcap: extendcap, angle: -angle, color: color, outline: outline)
+  bin = Snowy.generate_to_png(id, size: size, cap: cap, extendcap: extendcap,
+                              angle: -angle, color: color, outline: outline,
+                              driver: driver)
 
   res.status = 200
   res.content_type = "image/png"
@@ -71,7 +80,7 @@ s.mount_proc("/") do |req, res|
 <style type=text/css>
 body
 {
-  background: url("snowy/#{"%08X" % rand(RANDMAX)}.png?size=256&angle=-10&extendcap=true&color=0xf0f0f8");
+  background: url("snowy/#{"%08X" % rand(RANDMAX)}.png?size=256&angle=-10&extendcap=true&color=0xf0f0f8&driver=cairo");
 }
 </style>
 
@@ -80,10 +89,10 @@ body
     "snowy" is an identicon implements with the snow crystal motif.
   </div>
   <div>
-    #{20.times.map { %(<img src="snowy/%08X.png?size=131&angle=5&extendcap=true" alt="">) % rand(RANDMAX) }.join}
+    #{20.times.map { %(<img src="snowy/%08X.png?size=131&angle=5&extendcap=true&driver=ruby" alt="">) % rand(RANDMAX) }.join}
   </div>
   <div>
-    #{20.times.map { %(<img src="snowy/%08X.png?size=131&angle=0&extendcap=true&color=0xb0c8f8" alt="">) % rand(RANDMAX) }.join}
+    #{20.times.map { %(<img src="snowy/%08X.png?size=131&angle=0&extendcap=true&color=0xb0c8f8&driver=ruby" alt="">) % rand(RANDMAX) }.join}
   </div>
 </div>
   HTML
