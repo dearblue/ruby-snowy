@@ -367,6 +367,16 @@ module Snowy
       code = Digest::MD5.hexdigest(code).hex
     end
 
+    driver ||= self.driver
+    case driver
+    when :ruby, nil
+      require_relative "../snowy"
+      driver = DefaultDriver
+    when :cairo
+      require_relative "cairo"
+      driver = CairoDriver
+    end
+
     if color
       if outline.nil?
         r = color.get_red
@@ -428,6 +438,8 @@ module Snowy
 
     driver.render(size, triangles, rgba(255, 255, 255, 0), color, outline, angle)
   end
+
+  @@driver = nil
 
   def self.driver
     @@driver
