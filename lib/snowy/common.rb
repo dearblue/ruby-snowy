@@ -92,9 +92,10 @@ module Snowy
       outline = rgba(r * 7 / 8, g * 7 / 8, b * 7 / 8, a || 0xff)
     end
 
-    code = code ^ (code >> 16) ^ ((code & 0xffff) << 16) if extendcap
-
     depth = extendcap ? 7 : 6
+
+    # NOTE: 全てのビットが0、または1とならないようにするため、その2パターンを除去する
+    code = code % ((1 << (depth * (depth + 1) / 2)) - 2) + 1
 
     if cap
       # 外周部を追加
