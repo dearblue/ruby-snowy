@@ -34,8 +34,7 @@ File.binwrite("snowy.png", pngdata)
 ## Demonstration with web browser
 
 ``` shell
-$ gem install sinatra haml
-$ ruby snowy-demo.rb
+$ ruby snowy-demo.rb -p 4567
 ```
 
 And, access to http://localhost:4567/ on web browser.

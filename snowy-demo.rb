@@ -1,50 +1,93 @@
 #!ruby
 
-require "sinatra"
-require "haml"
-require_relative "lib/snowy.rb"
-#require_relative "lib/snowy/cairo.rb"
+require "optparse"
 
-if $-d
-  require "sinatra/reloader"
-  also_reload "lib/snowy/common.rb"
-  also_reload "lib/snowy.rb"
-  #also_reload "lib/snowy/cairo.rb"
+port = 4567
+OptionParser.new(nil, 12, " ").instance_exec do
+  on("-p port", "declare for http binding port (DEFAULT: #{port})") { |x| port = x.to_i }
+  parse!
 end
 
-get "/" do
-  haml <<-HAML
-!!! 5
-%title Demonstration for snowy
-:css
-  body
-  {
-    background: url("snowy/#{"%08X" % (0xeef00000 | rand(0x100000))}.png?size=256&angle=-10&extendcap=true"); 
-  }
+require "webrick"
+require_relative "lib/snowy"
 
-%div{style: "text-align: center"}
-  %div{style: "padding: 1em; font-size: 200%"}
-    "snowy" is an identicon implements with the snow crystal motif.
-  %div
-    #{20.times.map { %(<img src="snowy/%08X.png?size=131&angle=5&extendcap=true" alt="">) % [rand(0xffffffff)] }.join}
-  %div
-    #{20.times.map { %(<img src="snowy/%08X.png?size=131&angle=0&extendcap=true" alt="">) % [rand(0x00100000) | 0x69f00000] }.join}
-  HAML
+RANDMAX = 1 << 32
+
+def notfound(req, res)
+  res.body = <<-HTML
+<!DOCTYPE html>
+<title>404 NOT FOUND</title>
+<p>Requested resource is not found</p>
+<pre>#{req.path}
+  HTML
+  res.status = 404
+  res.content_type = "text/html; charset=utf-8"
+
+  nil
 end
 
-get "/snowy/*.png" do |id|
+s = WEBrick::HTTPServer.new(BindAddress: "0.0.0.0", Port: port)
+
+s.mount_proc("/snowy/") do |req, res|
+  next notfound(req, res) unless req.path =~ %r(^/snowy/([0-9a-f]+)(?:\.png)?$)i
+
+  id = $1
+  params = req.query
+
   id = id.hex
   size = (params["size"] || 128).to_i
   size = [32, size, 4096].sort[1]
   cap = (params["nocap"]) ? false : true
   angle = (params["angle"] || 0).to_i
+  color = params["color"]
+  if color.nil? || color.empty?
+    color = nil
+  else
+    color = ((Integer(color) & 0x00ffffff) << 8) | 0xff
+  end
+  outline = params["outline"]
+  if outline.nil? || outline.empty?
+    outline = nil
+  else
+    outline = ((Integer(outline) & 0x00ffffff) << 8) | 0xff
+  end
   if params["monotone"]
     id = (id & 0x000fffff) | 0x9cf00000
   end
   extendcap = (params["extendcap"] || "false") == "false" ? false : true
-  bin = Snowy.generate_to_png(id, size: size, cap: cap, extendcap: extendcap, angle: -angle)
+  bin = Snowy.generate_to_png(id, size: size, cap: cap, extendcap: extendcap, angle: -angle, color: color, outline: outline)
 
-  status 200
-  headers "Content-Type" => "image/png"
-  body bin
+  res.status = 200
+  res.content_type = "image/png"
+  res.body = bin
 end
+
+s.mount_proc("/") do |req, res|
+  next notfound(req, res) unless req.path == "/"
+
+  res.body = <<-HTML
+<!DOCTYPE html>
+<title>Demonstration for snowy</title>
+<style type=text/css>
+body
+{
+  background: url("snowy/#{"%08X" % rand(RANDMAX)}.png?size=256&angle=-10&extendcap=true&color=0xf0f0f8");
+}
+</style>
+
+<div style=text-align:center>
+  <div style=padding:1em;font-size:200%>
+    "snowy" is an identicon implements with the snow crystal motif.
+  </div>
+  <div>
+    #{20.times.map { %(<img src="snowy/%08X.png?size=131&angle=5&extendcap=true" alt="">) % rand(RANDMAX) }.join}
+  </div>
+  <div>
+    #{20.times.map { %(<img src="snowy/%08X.png?size=131&angle=0&extendcap=true&color=0xb0c8f8" alt="">) % rand(RANDMAX) }.join}
+  </div>
+</div>
+  HTML
+end
+
+trap("INT"){ s.shutdown }
+s.start
