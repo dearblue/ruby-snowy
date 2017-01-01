@@ -167,6 +167,85 @@ module Snowy
   end
 
   module PNG
+    TYPE_GRAYSCALE = 0
+    TYPE_RGB = 2
+    TYPE_PALETTE = 3
+    TYPE_GRAYSCALE_ALPHA = 4
+    TYPE_RGBA = 6
+
+    def self.export(out = "".b)
+      Exporter.new(out)
+    end
+
+    class Exporter < Struct.new(:out, :width, :height)
+      BasicStruct = superclass
+
+      def initialize(out = "".b)
+        super
+        out << [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a].pack("C*")
+        self
+      end
+
+      def header(width, height, colorbits, colortype)
+        self.width = width
+        self.height = height
+
+        ##  0     1,2,4,8,16  immediate grayscale sample
+        ##  2     8,16        immediate RGB sample
+        ##  3     1,2,4,8     palette sample (need PLTE chunk)
+        ##  4     8,16        immediate grayscale sample with alpha
+        ##  6     8,16        immediate RGB sample with alpha
+        Chunk.pack_to(out, "IHDR", [width, height, colorbits, colortype, 0, 0, 0].pack("NNCCCCC"))
+        self
+      end
+
+      def palette(palette, alpha: false)
+        rgb = palette.reduce("".b) { |a, e|
+          a << e.pack_rgb
+        }
+        PNG::Chunk.pack_to(out, "PLTE", rgb)
+
+        if alpha
+          trns = palette.reduce([]) { |a, e| a << e.get_alpha }
+          PNG::Chunk.pack_to(out, "tRNS", trns.pack("C*"))
+        end
+
+        self
+      end
+
+      def text(keyword, text)
+        ## iTXt
+        ##    Keyword:             1-79 bytes (character string)
+        ##    Null separator:      1 byte
+        ##    Compression flag:    1 byte
+        ##    Compression method:  1 byte
+        ##    Language tag:        0 or more bytes (character string)
+        ##    Null separator:      1 byte
+        ##    Translated keyword:  0 or more bytes
+        ##    Null separator:      1 byte
+        ##    Text:                0 or more bytes
+        PNG::Chunk.pack_to(out, "iTXt", [keyword, 0, 0, text].pack("a*xCCxxa*"))
+        self
+      end
+
+      def idat(pixels, level: Zlib::DEFAULT_COMPRESSION)
+        scanline = ->(lines, line) {
+          lines << "\0" << line
+        }
+        lines = height.times.reduce("".b) { |a, h|
+          line = pixels.byteslice(h * width, width)
+          scanline[a, line]
+        }
+        PNG::Chunk.pack_to(out, "IDAT", Zlib.deflate(lines, level))
+        self
+      end
+
+      def iend
+        PNG::Chunk.pack_to(out, "IEND", "")
+        self
+      end
+    end
+
     module Chunk
       def self.pack_to(io, code, chunk)
         crc = Zlib.crc32(chunk, Zlib.crc32(code))
