@@ -81,12 +81,10 @@ module Snowy
         a = color.get_alpha
       end
     else
-      r = (code >> 28) & 0x0f
-      g = (code >> 24) & 0x0f
-      b = (code >> 20) & 0x0f
-      r = (r << 3) | 0x80
-      g = (g << 3) | 0x80
-      b = (b << 3) | 0x80
+      rgb = code % (15 * 15 * 15)
+      r = ((rgb / 15 / 15 + 1) << 3) | 0x87
+      g = ((rgb / 15 % 15 + 1) << 3) | 0x87
+      b = ((rgb % 15      + 1) << 3) | 0x87
       color = rgba(r, g, b)
     end
 
