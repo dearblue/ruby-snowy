@@ -24,9 +24,9 @@ require "snowy"
 require "zlib"
 
 str = "abcdefg"
-salt = 0
-id = Zlib.crc32(str, salt) # transcode to 32-bits integer
-pngdata = Snowy.generate_to_png(id, size: 256)
+driver = :ruby # or :cairo (when installed ``cairo'' gem)
+angle = 5 # by any degree number
+pngdata = Snowy.generate_to_png(str, size: 256, angle: angle, driver: driver)
 File.binwrite("snowy.png", pngdata)
 ```
 
