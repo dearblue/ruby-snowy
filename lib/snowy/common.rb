@@ -127,7 +127,7 @@ module Snowy
         if i.even?
           triangles << [m_level_i, level, m_level_i + 1, level_1, m_level_i - 1, level_1]
         else
-          triangles << [m_level_i, level_1, m_level_i + 1, level, m_level_i - 1, level]
+          triangles << [m_level_i, level_1, m_level_i - 1, level, m_level_i + 1, level]
         end
       end
     end
