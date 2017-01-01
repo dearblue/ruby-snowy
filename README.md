@@ -3,7 +3,7 @@
 "snowy" is an identicon implements with the snow crystal motif.
 
   * package name: snowy
-  * version: 0.1
+  * version: 0.2
   * software quality: EXPERIMENTAL
   * license: BSD-2-clause License
   * author: dearblue <dearblue@users.noreply.github.com>
