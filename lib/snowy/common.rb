@@ -166,6 +166,18 @@ module Snowy
     end
   end
 
+  module PNG
+    module Chunk
+      def self.pack_to(io, code, chunk)
+        crc = Zlib.crc32(chunk, Zlib.crc32(code))
+        io << [chunk.bytesize].pack("N")
+        io << code << chunk
+        io << [crc].pack("N")
+        io
+      end
+    end
+  end
+
   module Aux
     def self.build_shape_from_triangle(triangles)
       shapes = [triangles.map { |t| t.each_slice(2).to_a }]
