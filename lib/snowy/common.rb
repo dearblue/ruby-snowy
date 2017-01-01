@@ -54,6 +54,118 @@ module Snowy
            (a.to_i.clamp(0, 255)      )
   end
 
+  class Matrix
+    attr_reader :matrix
+
+    def self.[](matrix)
+      case matrix
+      when self
+        matrix
+      else
+        new matrix
+      end
+    end
+
+    def initialize(mat = nil)
+      @matrix = [[nil, nil, nil], [nil, nil, nil], [nil, nil, nil]]
+
+      if mat
+        load mat
+      else
+        reset
+      end
+    end
+
+    def initialize_copy(mat)
+      @matrix = [[nil, nil, nil], [nil, nil, nil], [nil, nil, nil]]
+      load mat
+    end
+
+    def reset
+      load [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+    end
+
+    def load(mat)
+      case mat
+      when Matrix
+        matrix[0][0, 3] = mat.matrix[0]
+        matrix[1][0, 3] = mat.matrix[1]
+        matrix[2][0, 3] = mat.matrix[2]
+      when Array
+        if mat.size == 3 &&
+            mat[0].kind_of?(Array) && mat[0].size == 3 &&
+            mat[1].kind_of?(Array) && mat[1].size == 3 &&
+            mat[2].kind_of?(Array) && mat[2].size == 3
+          matrix[0][0, 3] = mat[0]
+          matrix[1][0, 3] = mat[1]
+          matrix[2][0, 3] = mat[2]
+        else
+          if mat.size == 9
+            matrix[0][0, 3] = mat[0, 3]
+            matrix[1][0, 3] = mat[3, 3]
+            matrix[2][0, 3] = mat[6, 3]
+          else
+            raise ArgumentError, "wrong element number (given #{mat.size} elements, expect 9 elements)"
+          end
+        end
+      else
+        raise ArgumentError, "wrong argument type (expect Snowy::Matrix or Array)"
+      end
+
+      self
+    end
+
+    def mult(mat)
+      mult! self.class[mat].matrix
+    end
+
+    def mult!(mat)
+      3.times do |i|
+        m0 = matrix[i]
+        mm = m0.dup
+        3.times do |j|
+          m0[j] = mm[0] * mat[0][j] +
+                  mm[1] * mat[1][j] +
+                  mm[2] * mat[2][j]
+        end
+      end
+
+      self
+    end
+
+    def transform2(x, y, w = 1)
+      mx = matrix[0]
+      my = matrix[1]
+      [x * mx[0] + y * mx[1] + w * mx[2],
+       x * my[0] + y * my[1] + w * my[2]]
+    end
+
+    alias transform transform2
+
+    def transform3(x, y, w = 1)
+      mx = matrix[0]
+      my = matrix[1]
+      mw = matrix[2]
+      [x * mx[0] + y * mx[1] + w * mx[2],
+       x * my[0] + y * my[1] + w * my[2],
+       x * mw[0] + y * mw[1] + w * mw[2]]
+    end
+
+    def translate(dx, dy, dw = 1)
+      mult!([[1, 0, dx], [0, 1, dy], [0, 0, dw]])
+    end
+
+    def scale(ax, ay, aw = 1)
+      mult!([[ax, 0, 0], [0, ay, 0], [0, 0, aw]])
+    end
+
+    def rotate(rad)
+      cos = Math.cos(rad)
+      sin = Math.sin(rad)
+      mult!([[cos, -sin, 0], [sin, cos, 0], [0, 0, 1]])
+    end
+  end
+
   module Aux
     def self.build_shape_from_triangle(triangles)
       shapes = [triangles.map { |t| t.each_slice(2).to_a }]
