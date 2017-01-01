@@ -1,4 +1,5 @@
 require "zlib"
+require "digest/md5"
 
 module Snowy
   module Extentions
@@ -363,7 +364,7 @@ module Snowy
   #
   def self.generate_to_png(code, size: 128, cap: true, extendcap: true, angle: 0, color: nil, outline: nil, driver: self.driver)
     if code.kind_of?(String)
-      code = Zlib.crc32(code)
+      code = Digest::MD5.hexdigest(code).hex
     end
 
     if color
