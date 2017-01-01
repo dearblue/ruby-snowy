@@ -97,6 +97,13 @@ module Snowy
     code = code ^ (code >> 16) ^ ((code & 0xffff) << 16) if extendcap
 
     depth = extendcap ? 7 : 6
+
+    if cap
+      # 外周部を追加
+      code |= (extendcap ? 3 << 33 : 3 << 25)
+      depth += 1
+    end
+
     triangles = [] # [[x1, y1, x2, y2, x3, y3], ...]
     depth.times do |level|
       # level # 現在の階層
@@ -108,13 +115,6 @@ module Snowy
       offbase = (level * level_1) / 2
       offpivot = (layer + 1) / 2 - 1
       layer.times do |i|
-        if !extendcap && level_1 == depth
-          i += 1
-          break if (i + 1) == layer
-          #break if i > layer
-        end
-
-        #if (i + 1) > (layer + 1) / 2
         if i > offpivot
           # mirror
           off = offbase + (layer - i - 1)
@@ -122,7 +122,6 @@ module Snowy
           off = offbase + i
         end
 
-        off -= 1 if !extendcap && level_1 == depth
         next if code[off] == 0
 
         m_level_i = -level + i
@@ -131,17 +130,6 @@ module Snowy
         else
           triangles << [m_level_i, level_1, m_level_i + 1, level, m_level_i - 1, level]
         end
-      end
-    end
-
-    # 一番外側に三角形を配置する
-    if cap
-      if extendcap
-        triangles << [-5, 7, -3, 7, -4, 8]
-        triangles << [5, 7, 4, 8, 3, 7]
-      else
-        triangles << [-4, 6, -2, 6, -3, 7]
-        triangles << [4, 6, 3, 7, 2, 6]
       end
     end
 
