@@ -55,6 +55,352 @@ module Snowy
            (a.to_i.clamp(0, 255)      )
   end
 
+  def self.cmy(c, m, y, a = 1.0)
+    Color.new(CMY.new(c, m, y), a)
+  end
+
+  def self.hsl(h, s, l, a = 1.0)
+    Color.new(HSL.new(h, s, l), a)
+  end
+
+  def self.hsb(h, s, b, a = 1.0)
+    Color.new(HSB.new(h, s, b), a)
+  end
+
+  class Color
+    attr_reader :color, :alpha
+
+    def initialize(color, alpha = 1.0)
+      @color = color
+      @alpha = alpha.to_f
+    end
+
+    def pack_rgb
+      color.to_rgb.to_a(8).pack("C*")
+    end
+
+    def pack_rgba
+      [*color.to_rgb.to_a(8), (alpha.clamp(0, 1) * 255).round].pack("C*")
+    end
+  end
+
+  class RGB
+    attr_reader :r, :g, :b
+
+    def initialize(r, g, b)
+      @r = r.to_f
+      @g = g.to_f
+      @b = b.to_f
+    end
+
+    def r=(r)
+      @r = r.to_f
+    end
+
+    def g=(g)
+      @g = g.to_f
+    end
+
+    def b=(b)
+      @b = b.to_f
+    end
+
+    #
+    # @overload to_a
+    # @overload to_a(true)
+    # @overload to_a(8)
+    # @overload to_a(16)
+    #
+    # @return [Array] color primitives as RGB
+    #
+    def to_a(norm = nil)
+      return [r, g, b] unless norm
+
+      case norm
+      when true, 8
+        max = (1 << 8) - 1
+      when 16
+        max = (1 << 16) - 1
+      else
+        raise ArgumentError
+      end
+
+      [(r.clamp(0, 1) * max).round,
+       (g.clamp(0, 1) * max).round,
+       (b.clamp(0, 1) * max).round]
+    end
+
+    alias red r
+    alias red= r=
+    alias green g
+    alias green= g=
+    alias blue b
+    alias blue= b=
+
+    def inspect
+      %(#<#{self.class} red=#{r}, green=#{g}, blue=#{b}>)
+    end
+
+    def pretty_inspect(q)
+      q.text inspect
+    end
+
+    def to_int8
+      r = (@r.clamp(0, 1) * 255).round
+      g = (@g.clamp(0, 1) * 255).round
+      b = (@b.clamp(0, 1) * 255).round
+      (r << 16) | (g << 8) | b
+    end
+
+    alias to_i to_int8
+
+    def to_hex8
+      "%06x" % to_int8
+    end
+
+    alias to_hex to_hex8
+
+    alias to_rgb dup
+
+    def to_cmy
+      CMY.new(1 - r, 1 - g, 1 - b)
+    end
+
+    def to_hsb
+      synthesis_for HSB
+    end
+
+    def to_hsl
+      synthesis_for HSL
+    end
+
+    def synthesis_for(type)
+      (min, *, max) = [r, g, b].sort
+      case min
+      when max
+        hue = nil
+      when b
+        hue = 60 * (g - r) / (max - min) + 60
+      when r
+        hue = 60 * (b - g) / (max - min) + 180
+      when g
+        hue = 60 * (r - b) / (max - min) + 300
+      end
+
+      type.synthesis hue, max, min
+    end
+
+    def RGB.synthesis(hue, max, min)
+      return new max, max, max unless hue
+
+      hue %= 360
+      delta = max - min
+      hue1 = hue % 120
+      hue1 = 120 - hue1 if hue1 > 60
+      mid = min + delta * hue1 / 60.0
+      case (hue / 60).to_i
+      when 0; new max, mid, min
+      when 1; new mid, max, min
+      when 2; new min, max, mid
+      when 3; new min, mid, max
+      when 4; new mid, min, max
+      else  ; new max, min, mid
+      end
+    end
+  end
+
+  class CMY
+    attr_reader :c, :m, :y
+
+    def initialize(c, m, y)
+      @c = c.to_f
+      @m = m.to_f
+      @y = y.to_f
+    end
+
+    def c=(c)
+      @c = c.to_f
+    end
+
+    def m=(m)
+      @m = m.to_f
+    end
+
+    def y=(y)
+      @y = y.to_f
+    end
+
+    alias cyan c
+    alias cyan= c=
+    alias mathenta m
+    alias mathenta= m=
+    alias yellow y
+    alias yellow= y=
+
+    def to_a
+      [c, m, y]
+    end
+
+    def inspect
+      %(#<#{self.class} cyan=#{c}, mathenta=#{m}, yellow=#{y}>)
+    end
+
+    def pretty_inspect(q)
+      q.text inspect
+    end
+
+    def to_rgb
+      RGB.new(1 - c, 1 - m, 1 - y)
+    end
+
+    alias to_cmy dup
+
+    def to_hsb
+      to_rgb.to_hsb
+    end
+
+    def to_hsl
+      to_rgb.to_hsl
+    end
+
+    def synthesis_for(type)
+      to_rgb.synthesis_for(type)
+    end
+
+    def self.synthesis(hue, max, min)
+      RGB.synthesis(hue, max, min).to_cmy
+    end
+  end
+
+  # 円錐モデル
+  class HSB
+    attr_reader :h, :s, :b
+
+    def initialize(h, s, b)
+      @h = h ? h.to_f : nil
+      @s = s.to_f
+      @b = b.to_f
+    end
+
+    def h=(h)
+      @h = h ? h.to_f : nil
+    end
+
+    def s=(s)
+      @s = s.to_f
+    end
+
+    def b=(b)
+      @b = b.to_f
+    end
+
+    alias hue h
+    alias hue= h=
+    alias saturation s
+    alias saturation= s=
+    alias brightness b
+    alias brightness= b=
+
+    def to_a
+      [h, s, b]
+    end
+
+    def inspect
+      %(#<#{self.class} hue=#{h.inspect}, saturation=#{s}, brightness=#{b}>)
+    end
+
+    def pretty_inspect(q)
+      q.text inspect
+    end
+
+    def to_rgb
+      synthesis_for RGB
+    end
+
+    def to_cmy
+      synthesis_for CMY
+    end
+
+    alias to_hsb dup
+
+    def to_hsl
+      synthesis_for HSL
+    end
+
+    def synthesis_for(type)
+      type.synthesis h, b, b - s
+    end
+
+    def HSB.synthesis(hue, max, min)
+      new hue, max - min, max
+    end
+  end
+
+  # 双円錐モデル
+  class HSL
+    attr_reader :h, :s, :l
+
+    def initialize(h, s, l)
+      @h = h ? h.to_f : nil
+      @s = s.to_f
+      @l = l.to_f
+    end
+
+    def h=(h)
+      @h = h ? h.to_f : nil
+    end
+
+    def s=(s)
+      @s = s.to_f
+    end
+
+    def l=(l)
+      @l = l.to_f
+    end
+
+    alias hue h
+    alias hue= h=
+    alias saturation s
+    alias saturation= s=
+    alias luminance l
+    alias luminance= l=
+
+    def to_a
+      [h, s, l]
+    end
+
+    def inspect
+      %(#<#{self.class} hue=#{h.inspect}, saturation=#{s}, luminance=#{l}>)
+    end
+
+    def pretty_inspect(q)
+      q.text inspect
+    end
+
+    def to_rgb
+      synthesis_for RGB
+    end
+
+    def to_cmy
+      synthesis_for CMY
+    end
+
+    def to_hsb
+      synthesis_for HSB
+    end
+
+    alias to_hsl dup
+
+    def synthesis_for(type)
+      ss = s / 2.0
+      type.synthesis h, l + ss, l - ss
+    end
+
+    def HSL.synthesis(hue, max, min)
+      new hue, max - min, (max + min) / 2
+    end
+  end
+
   class Matrix
     attr_reader :matrix
 
