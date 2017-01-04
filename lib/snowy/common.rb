@@ -737,17 +737,22 @@ module Snowy
 
 
   #
-  # call-seq:
-  #   generate_to_png(code, size = 128)
+  # @overload generate_to_png(code, options = {})
   #
   # @return
-  #   string object
-  #
+  #   string object as png stream
   # @param [Integer] code
-  #   32 bits integer
-  #
-  # @param [Integer] size
-  #   output png image size
+  #   any bit integer (more than 40 bit recommended)
+  # @param [String] code
+  #   any length string (to hashing by md5 in this method)
+  # @param options
+  # @option options [Integer] :size (128) image size (width and height)
+  # @option options [bool] :cap (true) add bit pattern to outside
+  # @option options [bool] :extendcap (true) add bit pattern layer to outside
+  # @option options [integer] :angle (0) rotation graph in degree
+  # @option options :color (nil) set fill color
+  # @option options :outline (nil) set outline color
+  # @option options :driver (Snowy.driver) set rendering driver
   #
   def self.generate_to_png(code, size: 128, cap: true, extendcap: true, angle: 0, color: nil, outline: nil, driver: self.driver)
     if code.kind_of?(String)
