@@ -773,11 +773,11 @@ module Snowy
 
     case color
     when nil
-      d = 360 * 10 * 5 # H * S * L
+      d = 360 * 10 * 6 # H * S * L
       r = code % d
-      h = r / (10 * 5)
-      s = (r / 5 % 10) / 15.0
-      l = (r % 5 + 10) / 15.0
+      h = r / (10 * 6)
+      s = (r / 6 % 10 + 1) / 16.0
+      l = (r % 6 + 10) / 15.0
       hsl = HSL.new(h, s, l)
       color = Color.new(hsl, 1)
     when Integer
