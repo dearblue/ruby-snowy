@@ -80,6 +80,13 @@ end
 s.mount_proc("/") do |req, res|
   next notfound(req, res) unless req.path == "/"
 
+  params = req.query
+  if String(params["driver"]).casecmp("cairo")
+    driver = "cairo"
+  else
+    driver = "ruby"
+  end
+
   res.body = <<-HTML
 <!DOCTYPE html>
 <title>Demonstration for snowy</title>
@@ -95,10 +102,10 @@ body
     "snowy" is an identicon implements with the snow crystal motif.
   </div>
   <div>
-    #{20.times.map { %(<img src="snowy/%08X.png?size=131&angle=5&extendcap=true&driver=ruby" alt="">) % rand(RANDMAX) }.join}
+    #{20.times.map { %(<img src="snowy/%08X.png?size=131&angle=5&extendcap=true&driver=#{driver}" alt="">) % rand(RANDMAX) }.join}
   </div>
   <div>
-    #{20.times.map { %(<img src="snowy/%08X.png?size=131&angle=0&extendcap=true&color=0xb0c8f8&driver=ruby" alt="">) % rand(RANDMAX) }.join}
+    #{20.times.map { %(<img src="snowy/%08X.png?size=131&angle=0&extendcap=true&color=0xb0c8f8&driver=#{driver}" alt="">) % rand(RANDMAX) }.join}
   </div>
 </div>
   HTML
