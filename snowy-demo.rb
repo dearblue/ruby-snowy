@@ -81,7 +81,7 @@ s.mount_proc("/") do |req, res|
   next notfound(req, res) unless req.path == "/"
 
   params = req.query
-  if String(params["driver"]).casecmp("cairo")
+  if String(params["driver"]).casecmp("cairo") == 0
     driver = "cairo"
   else
     driver = "ruby"
