@@ -789,7 +789,7 @@ module Snowy
     end
 
     if outline.nil?
-      outline = Color.new(HSL.new(hsl.h, hsl.s * 4 / 5, hsl.l * 4 / 5), color.alpha)
+      outline = Color.new(HSL.new(hsl.h, hsl.s, hsl.l * 3 / 4), color.alpha)
     end
 
     depth = extendcap ? 7 : 6
