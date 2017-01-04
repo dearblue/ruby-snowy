@@ -12,7 +12,7 @@ module Snowy
       surface = Cairo::ImageSurface.new(Cairo::Format::ARGB32, size, size)
       Cairo::Context.new(surface) do |context|
         context.instance_eval do
-          set_source_color [background.get_red / 255.0, background.get_green / 255.0, background.get_blue / 255.0, background.get_alpha / 255.0]
+          set_source_color [background.red, background.green, background.blue, background.alpha]
           paint
           translate(size / 2.0, size / 2.0)
           scale(size / 32.0, size / 32.0)
@@ -30,10 +30,10 @@ module Snowy
           end
           if outline
             set_line_width 0.5
-            set_source_rgba outline.get_red / 255.0, outline.get_green / 255.0, outline.get_blue / 255.0, 255 / 255.0
+            set_source_rgba outline.red, outline.green, outline.blue, outline.alpha
             stroke true
           end
-          set_source_rgba color.get_red / 255.0, color.get_green / 255.0, color.get_blue / 255.0, 255 / 255.0
+          set_source_rgba color.red, color.green, color.blue, color.alpha
           fill
         end
       end

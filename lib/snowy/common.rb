@@ -48,11 +48,8 @@ module Snowy
   using Extentions
 
 
-  def self.rgba(r, g, b, a = 255)
-    return (r.to_i.clamp(0, 255) << 24) |
-           (g.to_i.clamp(0, 255) << 16) |
-           (b.to_i.clamp(0, 255) <<  8) |
-           (a.to_i.clamp(0, 255)      )
+  def self.rgb(r, g, b, a = 1.0)
+    Color.new(RGB.new(r, g, b), a)
   end
 
   def self.cmy(c, m, y, a = 1.0)
@@ -71,16 +68,48 @@ module Snowy
     attr_reader :color, :alpha
 
     def initialize(color, alpha = 1.0)
-      @color = color
+      @color = color.to_rgb
       @alpha = alpha.to_f
     end
 
+    def red
+      color.red
+    end
+
+    def green
+      color.green
+    end
+
+    def blue
+      color.blue
+    end
+
+    def red8
+      color.red8
+    end
+
+    def green8
+      color.green8
+    end
+
+    def blue8
+      color.blue8
+    end
+
+    def alpha8
+      (alpha.clamp(0, 1) * 255).round
+    end
+
+    def to_hsl
+      color.to_hsl
+    end
+
     def pack_rgb
-      color.to_rgb.to_a(8).pack("C*")
+      color.to_a(8).pack("C*")
     end
 
     def pack_rgba
-      [*color.to_rgb.to_a(8), (alpha.clamp(0, 1) * 255).round].pack("C*")
+      [*color.to_a(8), (alpha.clamp(0, 1) * 255).round].pack("C*")
     end
   end
 
@@ -136,6 +165,18 @@ module Snowy
     alias green= g=
     alias blue b
     alias blue= b=
+
+    def red8
+      (r.clamp(0, 1) * 255).round
+    end
+
+    def green8
+      (g.clamp(0, 1) * 255).round
+    end
+
+    def blue8
+      (b.clamp(0, 1) * 255).round
+    end
 
     def inspect
       %(#<#{self.class} red=#{r}, green=#{g}, blue=#{b}>)
@@ -553,7 +594,7 @@ module Snowy
         PNG::Chunk.pack_to(out, "PLTE", rgb)
 
         if alpha
-          trns = palette.reduce([]) { |a, e| a << e.get_alpha }
+          trns = palette.reduce([]) { |a, e| a << e.alpha8 }
           PNG::Chunk.pack_to(out, "tRNS", trns.pack("C*"))
         end
 
@@ -711,6 +752,8 @@ module Snowy
   def self.generate_to_png(code, size: 128, cap: true, extendcap: true, angle: 0, color: nil, outline: nil, driver: self.driver)
     if code.kind_of?(String)
       code = Digest::MD5.hexdigest(code).hex
+    else
+      code = code.to_i
     end
 
     driver ||= self.driver
@@ -723,23 +766,25 @@ module Snowy
       driver = CairoDriver
     end
 
-    if color
-      if outline.nil?
-        r = color.get_red
-        g = color.get_green
-        b = color.get_blue
-        a = color.get_alpha
-      end
+    case color
+    when nil
+      d = 360 * 10 * 5 # H * S * L
+      r = code % d
+      h = r / (10 * 5)
+      s = ((r / 5 % 10) + 5) / 15.0
+      l = (r % 5 + 10) / 15.0
+      hsl = HSL.new(h, s, l)
+      color = Color.new(hsl, 1)
+    when Integer
+      rgb = RGB.new(color.get_red / 255.0, color.get_green / 255.0, color.get_blue / 255.0)
+      color = Color.new(rgb, color.get_alpha / 255.0)
+      hsl = rgb.to_hsl
     else
-      rgb = code % (15 * 15 * 15)
-      r = ((rgb / 15 / 15 + 1) << 3) | 0x87
-      g = ((rgb / 15 % 15 + 1) << 3) | 0x87
-      b = ((rgb % 15      + 1) << 3) | 0x87
-      color = rgba(r, g, b)
+      hsl = color.to_hsl
     end
 
     if outline.nil?
-      outline = rgba(r * 7 / 8, g * 7 / 8, b * 7 / 8, a || 0xff)
+      outline = Color.new(HSL.new(hsl.h, hsl.s * 4 / 5, hsl.l * 4 / 5), color.alpha)
     end
 
     depth = extendcap ? 7 : 6
@@ -782,7 +827,7 @@ module Snowy
       end
     end
 
-    driver.render(size, triangles, rgba(255, 255, 255, 0), color, outline, angle)
+    driver.render(size, triangles, rgb(1, 1, 1, 0), color, outline, angle)
   end
 
   @@driver = nil

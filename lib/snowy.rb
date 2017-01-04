@@ -56,8 +56,8 @@ module Snowy
   @@driver = DefaultDriver
 
 
-  BLACK = rgba(0, 0, 0)
-  WHITE = rgba(255, 255, 255)
+  BLACK = rgb(0.0, 0.0, 0.0)
+  WHITE = rgb(1.0, 1.0, 1.0)
 
   #
   # 256 indexed canvas
