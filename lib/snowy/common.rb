@@ -776,7 +776,7 @@ module Snowy
       d = 360 * 10 * 5 # H * S * L
       r = code % d
       h = r / (10 * 5)
-      s = ((r / 5 % 10) + 5) / 15.0
+      s = (r / 5 % 10) / 15.0
       l = (r % 5 + 10) / 15.0
       hsl = HSL.new(h, s, l)
       color = Color.new(hsl, 1)
