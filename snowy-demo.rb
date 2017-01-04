@@ -18,7 +18,7 @@ rescue LoadError
   NOCAIRO = true
 end
 
-RANDMAX = 1 << 32
+RANDMAX = 1 << 48
 
 def notfound(req, res)
   res.body = <<-HTML
