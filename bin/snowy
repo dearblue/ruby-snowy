@@ -1,0 +1,56 @@
+#!ruby
+
+require "snowy"
+require "optparse"
+
+unless 0.respond_to?(:clamp)
+  class Integer
+    def clamp(min, max)
+      return min if self < min
+      return max if self > max
+      self
+    end
+  end
+end
+
+size = 256
+angle = 0
+driver = :ruby
+extendcap = true
+outsidecap = false
+outname = "snowy.png"
+OptionParser.new("Usage: #{File.basename $0} [options] str ...", 12, " ").instance_eval do
+  on("-o outname", "write snowy image to outname (DEFAULT: #{outname})") do |x|
+    outname = x
+  end
+
+  on("-s size", "choose image size (32 .. 4096) (DEFAULT: #{size})") do |x|
+    size = x.to_i.clamp(32, 4096)
+  end
+
+  on("-a dgree", "set rotation in degree") do |x|
+    angle = x.to_f
+  end
+
+  on("-c", "with outside cap") { outsidecap = true }
+  on("-C", "without outside cap (DEFAULT)") { outsidecap = false }
+
+  on("-d driver", "choose drawing driver (ruby or cairo) (DEFAULT: #{driver})") do |x|
+    driver = x.to_sym
+    unless [:ruby, :cairo].include?(driver)
+      raise OptionParser::OptionError,
+        "wrong driver (expect `ruby' or `cairo', but given `#{driver}')"
+    end
+  end
+
+  order!
+end
+
+ARGV.each_with_index do |seq, no|
+  snowy = Snowy.generate_to_png(seq, size: size, angle: angle, extendcap: extendcap, cap: outsidecap, driver: driver)
+  if no > 0
+    File.binwrite(outname.sub(/(?=\.\w+$)|$/, ".#{no}"), snowy)
+  else
+    File.binwrite(outname, snowy)
+  end
+end
