@@ -765,13 +765,12 @@ module Snowy
   #   any length string (to hashing by md5 in this method)
   # @param options
   # @option options [Integer] :size (128) image size (width and height)
-  # @option options [bool] :extendcap (true) add bit pattern layer to outside
   # @option options [integer] :angle (0) rotation graph in degree
   # @option options :color (nil) set fill color
   # @option options :outline (nil) set outline color
   # @option options :driver (Snowy.driver) set rendering driver
   #
-  def self.generate_to_png(code, size: 128, extendcap: true, angle: 0, color: nil, outline: nil, driver: self.driver)
+  def self.generate_to_png(code, size: 128, angle: 0, color: nil, outline: nil, driver: self.driver)
     if code.kind_of?(String)
       code = Digest::MD5.hexdigest(code).hex
     else
@@ -809,8 +808,7 @@ module Snowy
       outline = Color.new(HSL.new(hsl.h, hsl.s, hsl.l * 3 / 4), color.alpha)
     end
 
-    depth = extendcap ? 7 : 6
-
+    depth = 7
     code = convergence_code(code)
 
     triangles = [] # [[x1, y1, x2, y2, x3, y3], ...]

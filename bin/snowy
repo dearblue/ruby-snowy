@@ -16,7 +16,6 @@ end
 size = 256
 angle = 0
 driver = :ruby
-extendcap = true
 outname = "snowy.png"
 OptionParser.new("Usage: #{File.basename $0} [options] str ...", 12, " ").instance_eval do
   on("-o outname", "write snowy image to outname (DEFAULT: #{outname})") do |x|
@@ -43,7 +42,7 @@ OptionParser.new("Usage: #{File.basename $0} [options] str ...", 12, " ").instan
 end
 
 ARGV.each_with_index do |seq, no|
-  snowy = Snowy.generate_to_png(seq, size: size, angle: angle, extendcap: extendcap, driver: driver)
+  snowy = Snowy.generate_to_png(seq, size: size, angle: angle, driver: driver)
   if no > 0
     File.binwrite(outname.sub(/(?=\.\w+$)|$/, ".#{no}"), snowy)
   else

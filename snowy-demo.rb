@@ -68,10 +68,8 @@ s.mount_proc("/snowy/") do |req, res|
   else
     driver = :ruby
   end
-  extendcap = (params["extendcap"] || "false") == "false" ? false : true
-  bin = Snowy.generate_to_png(id, size: size, extendcap: extendcap,
-                              angle: -angle, color: color, outline: outline,
-                              driver: driver)
+  bin = Snowy.generate_to_png(id, size: size, angle: -angle,
+                              color: color, outline: outline, driver: driver)
 
   res.status = 200
   res.content_type = "image/png"
