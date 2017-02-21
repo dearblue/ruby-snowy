@@ -3,8 +3,8 @@
 require "snowy"
 require "optparse"
 
-unless 0.respond_to?(:clamp)
-  class Integer
+unless Numeric.method_defined?(:clamp)
+  class Numeric
     def clamp(min, max)
       return min if self < min
       return max if self > max
