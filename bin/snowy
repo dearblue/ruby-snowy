@@ -39,6 +39,11 @@ OptionParser.new("Usage: #{File.basename $0} [options] str ...", 12, " ").instan
   end
 
   order!
+
+  if ARGV.empty?
+    $stderr.puts help
+    exit 1
+  end
 end
 
 ARGV.each_with_index do |seq, no|
