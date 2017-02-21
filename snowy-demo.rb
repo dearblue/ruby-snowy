@@ -2,8 +2,10 @@
 
 require "optparse"
 
+addr = "0.0.0.0"
 port = 4567
 OptionParser.new(nil, 12, " ").instance_exec do
+  on("-o addr", "declare for http binding address (DEFAULT: #{addr})") { |x| addr = x }
   on("-p port", "declare for http binding port (DEFAULT: #{port})") { |x| port = x.to_i }
   parse!
 end
@@ -33,7 +35,7 @@ def notfound(req, res)
   nil
 end
 
-s = WEBrick::HTTPServer.new(BindAddress: "0.0.0.0", Port: port)
+s = WEBrick::HTTPServer.new(BindAddress: addr, Port: port)
 
 s.mount_proc("/snowy/") do |req, res|
   next notfound(req, res) unless req.path =~ %r(^/snowy/([0-9a-f]+)(?:\.png)?$)i
