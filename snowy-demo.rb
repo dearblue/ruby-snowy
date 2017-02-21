@@ -46,7 +46,6 @@ s.mount_proc("/snowy/") do |req, res|
   id = id.hex
   size = (params["size"] || 128).to_i
   size = [32, size, 4096].sort[1]
-  cap = (params["nocap"]) ? false : true
   angle = (params["angle"] || 0).to_i
   color = params["color"]
   if color.nil? || color.empty?
@@ -70,7 +69,7 @@ s.mount_proc("/snowy/") do |req, res|
     driver = :ruby
   end
   extendcap = (params["extendcap"] || "false") == "false" ? false : true
-  bin = Snowy.generate_to_png(id, size: size, cap: cap, extendcap: extendcap,
+  bin = Snowy.generate_to_png(id, size: size, extendcap: extendcap,
                               angle: -angle, color: color, outline: outline,
                               driver: driver)
 

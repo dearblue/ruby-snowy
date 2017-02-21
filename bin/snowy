@@ -17,7 +17,6 @@ size = 256
 angle = 0
 driver = :ruby
 extendcap = true
-outsidecap = false
 outname = "snowy.png"
 OptionParser.new("Usage: #{File.basename $0} [options] str ...", 12, " ").instance_eval do
   on("-o outname", "write snowy image to outname (DEFAULT: #{outname})") do |x|
@@ -32,9 +31,6 @@ OptionParser.new("Usage: #{File.basename $0} [options] str ...", 12, " ").instan
     angle = x.to_f
   end
 
-  on("-c", "with outside cap") { outsidecap = true }
-  on("-C", "without outside cap (DEFAULT)") { outsidecap = false }
-
   on("-d driver", "choose drawing driver (ruby or cairo) (DEFAULT: #{driver})") do |x|
     driver = x.to_sym
     unless [:ruby, :cairo].include?(driver)
@@ -47,7 +43,7 @@ OptionParser.new("Usage: #{File.basename $0} [options] str ...", 12, " ").instan
 end
 
 ARGV.each_with_index do |seq, no|
-  snowy = Snowy.generate_to_png(seq, size: size, angle: angle, extendcap: extendcap, cap: outsidecap, driver: driver)
+  snowy = Snowy.generate_to_png(seq, size: size, angle: angle, extendcap: extendcap, driver: driver)
   if no > 0
     File.binwrite(outname.sub(/(?=\.\w+$)|$/, ".#{no}"), snowy)
   else
