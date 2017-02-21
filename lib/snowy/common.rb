@@ -735,6 +735,24 @@ module Snowy
     end
   end
 
+  def self.convergence_code(code)
+    # 全28ビットを (14, 7, 4, 3) に区分けし、
+    # (0...16382, 1...127, 1...15, 1...7) の値に収める。
+    # これは最外周が常に二つの点を持ち、内側に一つの点があることを保証させるため。
+
+    code %= 16383 * 127 * 15 * 7
+    a = code % 16383
+    b = code / 16383 % 127 + 1
+    c = code / 16383 / 127 % 15 + 1
+    d = code / 16383 / 127 / 15 % 7 + 1
+
+    # c と d は互い違いになるように組み合わせる。
+    c = 4.times.reduce(0) { |a, i| a | (c[i].zero? ? 0 : 1 << (i * 2)) }
+    d = 3.times.reduce(0) { |a, i| a | (d[i].zero? ? 0 : 1 << (i * 2)) }
+    cd = c | (d << 1)
+
+    a | (b << 14) | (cd << 21)
+  end
 
   #
   # @overload generate_to_png(code, options = {})
@@ -794,8 +812,7 @@ module Snowy
 
     depth = extendcap ? 7 : 6
 
-    # NOTE: 全てのビットが0、または1とならないようにするため、その2パターンを除去する
-    code = code % ((1 << (depth * (depth + 1) / 2)) - 2) + 1
+    code = convergence_code(code)
 
     if cap
       # 外周部を追加
